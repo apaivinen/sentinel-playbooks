@@ -1,4 +1,4 @@
-# Reset-EntraIDUserPassword
+# Reset-EntraIDUserPassword WORK IN PROGRESS
 
 - Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Reset-AADUserPassword
 - Original author: Nicholas DiCola

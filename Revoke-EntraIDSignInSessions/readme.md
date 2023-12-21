@@ -1,4 +1,4 @@
-# Revoke-EntraIDSignInSessions
+# Revoke-EntraIDSignInSessions WORK IN PROGRESS
 - Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Revoke-AADSignInSessions
 - Original author: Nicholas DiCola
 
@@ -13,9 +13,9 @@ Modification by: Anssi Päivinen
 4. use unified email connector
 
 ## Files
-- ...json
-- ...bicep
-- ...ps1
+- Revoke-EntraIDSignInSessions.json
+- Revoke-EntraIDSignInSessions.bicep
+- Revoke-EntraIDSignInSessions.ps1
 
 # Prequisites
 

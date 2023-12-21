@@ -1,4 +1,4 @@
-# Block-EntraIDUser
+# Block-EntraIDUser WORK IN PROGRESS
 - Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Block-AADUser
 - Original author: Nicholas DiCola
 
