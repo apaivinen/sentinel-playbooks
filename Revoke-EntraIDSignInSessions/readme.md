@@ -1,10 +1,10 @@
 # Revoke-EntraIDSignInSessions
-Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Revoke-AADSignInSessions
-Original author: Nicholas DiCola
+- Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Revoke-AADSignInSessions
+- Original author: Nicholas DiCola
 
 Modification by: Anssi Päivinen
 
-## Description
+# Description
 
 ## ToDo
 1. Change Get manager action to use graph api
@@ -12,19 +12,22 @@ Modification by: Anssi Päivinen
 3. Create a bicep template 
 4. use unified email connector
 
-## Description
-
-### Files
+## Files
 - ...json
 - ...bicep
 - ...ps1
 
-## Prequisites
+# Prequisites
 
-## Post-deployment
+# Post-deployment
 
-### Powershell for grating permissions for Managed identity
+## Powershell for grating permissions for Managed identity
 
 ```powershell
-
+# ~~ Insert script here ~~
 ```
+
+# Changes
+|Date|Description|
+|--|--|
+|2023-12-21|Initial development|
