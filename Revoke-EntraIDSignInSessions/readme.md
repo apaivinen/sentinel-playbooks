@@ -4,6 +4,11 @@
 
 Modification by: Anssi Päivinen
 
+# MODIFICATION 2024
+Original revoke sessions not used. Incident trigger was broken.
+Re-did the logic app. Need to write the documentation and do alert & entity trigger logic apps. 
+
+
 # Description
 
 ## ToDo
