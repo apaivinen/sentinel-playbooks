@@ -1,4 +1,4 @@
-# Revoke-EntraIDSignInSessions WORK IN PROGRESS
+# Revoke-EntraIDUserSignInSessions
 - Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Revoke-AADSignInSessions
 - Original author: Nicholas DiCola
 
