@@ -1,6 +1,7 @@
 # Revoke-EntraIDUserSignInSessions
 
-This is just a simple revoke user sign in sessions playbook for incident and entity triggers.
+This is just a simple revoke user sign in sessions playbook for incident and entity triggers.  
+More detailed description can be found [here](https://www.apaivinen.fi/posts/Revoke-User-Sign-In-Sessions-by-Logic-App-Sentinel-Playbook/)
 
 # Description
 
@@ -35,7 +36,7 @@ Both of the playbook templates creates following Azure resources:
 
 # Prequisites
 1. Sentinel workspace
-2. AzureAD Powershell module
+2. [AzureAD Powershell module](https://learn.microsoft.com/en-us/powershell/azure/active-directory/install-adv2?view=azureadps-2.0)
 
 # Post-deployment
 1. Assign Sentinel Responder role to Managed identity created by Logic App.
