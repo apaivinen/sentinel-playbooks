@@ -1,24 +1,37 @@
 # Revoke-EntraIDUserSignInSessions
-- Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Revoke-AADSignInSessions
-- Original author: Nicholas DiCola
 
-Modification by: Anssi Päivinen
-
-# MODIFICATION 2024
-Original revoke sessions not used. Incident trigger was broken.
-Re-did the logic app. Need to write the documentation and do alert & entity trigger logic apps. 
-
+This is just a simple revoke user sign in sessions playbook for incident and entity triggers.
 
 # Description
+
+Both of the playbook templates creates following Azure resources:
+- Logic App
+- Managed identity for Logic App
+- Microsoft Sentinel API connection for Managed Identity
+
+
+
+## Incident Trigger
+1. Trigger: When incident is triggered
+2. Get account entities from incident
+3. Loop through accounts
+4. Compose UPN
+5. Revoke user session
+6. Add comment to sentinel incident
+
+![](./images/Revoke-EntraIDUserSignInSessions-Incident-outline.png)
+
+## Entity Trigger
+1. Trigger: Microsoft Sentinel entity
+2. Compose - concat UPN
+3. HTTP - Revoke sessions
+4. Add comment to incident (V3)
+
+![](./images/Entity-trigger-revoke-sessions.png)
 
 ## ToDo
 1. Create Graph powershell script to assign permissions for managed identity
 2. Create a bicep template 
-
-## Files
-- Revoke-EntraIDSignInSessions.json
-- Revoke-EntraIDSignInSessions.bicep
-- Revoke-EntraIDSignInSessions.ps1
 
 # Prequisites
 1. Sentinel workspace
@@ -47,4 +60,4 @@ New-AzureAdServiceAppRoleAssignment -ObjectId $MI.ObjectId -PrincipalId $MI.Obje
 |Date|Description|
 |--|--|
 |2023-12-21|Initial development|
-|2024-01-13|Creating playbooks|
+|2024-01-13|Creating playbooks and readme|
