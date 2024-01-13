@@ -1,0 +1,151 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "metadata": {
+        "title": "Revoke Entra ID SignIn Sessions - Entity trigger",
+        "description": "This playbook will revoke all signin sessions for the user by using Graph API.",
+        "prerequisites": "You will need to grant User.ReadWrite.All permissions to the managed identity. You need to assign Sentinel Responder role to Logic App",
+        "lastUpdateTime": "2024-01-13T00:00:00.000Z",
+        "author": {
+            "name": "Anssi Päivinen"
+        }
+    },
+    "parameters": {
+        "PlaybookName": {
+            "defaultValue": "Revoke-EntraIDUserSignInSessions-Entity",
+            "type": "string"
+        }
+    },
+    "variables": {
+        "AzureSentinelConnectionName": "[concat('azuresentinel-', parameters('PlaybookName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[variables('AzureSentinelConnectionName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "LogicAppsCategory": "security",
+                "Playbook": "[parameters('PlaybookName')]"
+            },
+            "kind": "V1",
+            "properties": {
+                "displayName": "[parameters('PlaybookName')]",
+                "customParameterValues": {},
+                "parameterValueType": "Alternative",
+                "api": {
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuresentinel')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('PlaybookName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "LogicAppsCategory": "security",
+                "Playbook": "[parameters('PlaybookName')]",
+                "hidden-SentinelTemplateName": "Revoke-AADSigninSessions",
+                "hidden-SentinelTemplateVersion": "1.0"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', variables('AzureSentinelConnectionName'))]"
+            ],
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Microsoft_Sentinel_entity": {
+                            "type": "ApiConnectionWebhook",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                    }
+                                },
+                                "body": {
+                                    "callback_url": "@{listCallbackUrl()}"
+                                },
+                                "path": "/entity/@{encodeURIComponent('Account')}"
+                            }
+                        }
+                    },
+                    "actions": {
+                        "Compose_-_concat_UPN": {
+                            "runAfter": {},
+                            "type": "Compose",
+                            "inputs": "@concat(triggerBody()?['Entity']?['properties']?['Name'],'@',triggerBody()?['Entity']?['properties']?['UPNSuffix'])"
+                        },
+                        "HTTP_-_Revoke_sessions": {
+                            "runAfter": {
+                                "Compose_-_concat_UPN": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Http",
+                            "inputs": {
+                                "uri": "https://graph.microsoft.com/v1.0/users/@{outputs('Compose_-_concat_UPN')}/revokeSignInSessions",
+                                "method": "POST",
+                                "authentication": {
+                                    "audience": "https://graph.microsoft.com",
+                                    "type": "ManagedServiceIdentity"
+                                }
+                            }
+                        },
+                        "Add_comment_to_incident_(V3)": {
+                            "runAfter": {
+                                "HTTP_-_Revoke_sessions": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "body": {
+                                    "incidentArmId": "@triggerBody()?['IncidentArmID']",
+                                    "message": "<p><span style=\"white-space: pre-wrap;\">User </span>@{outputs('Compose_-_concat_UPN')}<span style=\"white-space: pre-wrap;\"> sign in sessions were revoked in EntraID</span></p>"
+                                },
+                                "path": "/Incidents/Comment"
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azuresentinel": {
+                                "connectionId": "[resourceId('Microsoft.Web/connections', variables('AzureSentinelConnectionName'))]",
+                                "connectionName": "[variables('AzureSentinelConnectionName')]",
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuresentinel')]",
+                                "connectionProperties": {
+                                    "authentication": {
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
