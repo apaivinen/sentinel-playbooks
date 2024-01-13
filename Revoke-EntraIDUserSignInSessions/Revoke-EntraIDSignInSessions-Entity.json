@@ -99,6 +99,9 @@
                             "inputs": {
                                 "uri": "https://graph.microsoft.com/v1.0/users/@{outputs('Compose_-_concat_UPN')}/revokeSignInSessions",
                                 "method": "POST",
+                                "headers": {
+                                    "Content-Type": "application/json"
+                                },
                                 "authentication": {
                                     "audience": "https://graph.microsoft.com",
                                     "type": "ManagedServiceIdentity"
