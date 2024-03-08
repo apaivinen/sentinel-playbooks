@@ -19,9 +19,12 @@ param storageAccountKey string
 param storageAccountName string
 var functionWorkerRuntime = runtime
 
-resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
+resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   name: appName
   location: location
+  tags:{
+    resource: appName
+  }
   kind: 'functionapp'
   identity: {
     type: 'SystemAssigned'
@@ -57,6 +60,18 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
           value: functionWorkerRuntime
+        }
+      ]
+      hostNameSslStates: [
+        {
+          name: '${appName}.azurewebsites.net'
+          sslState: 'Disabled'
+          hostType: 'Standard'
+        }
+        {
+          name: '${appName}.scm.azurewebsites.net'
+          sslState: 'Disabled'
+          hostType: 'Repository'
         }
       ]
       ftpsState: 'FtpsOnly'

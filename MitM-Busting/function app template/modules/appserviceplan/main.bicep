@@ -1,11 +1,11 @@
-param skuName string = 'B1'
-param skuCapacity int = 1
-param skuTier string = 'Basic'
+param skuName string = 'Y1'
+param skuCapacity int = 0
+param skuTier string = 'Dynamic'
 param location string
 param appServicePlanName string
 param appServiceKind string
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
+resource appServicePlan 'Microsoft.Web/sites@2023-01-01' = {
   name: appServicePlanName
   location: location
   properties: {

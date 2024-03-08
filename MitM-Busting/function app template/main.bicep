@@ -30,8 +30,9 @@ module storage 'modules/storageaccount/main.bicep' = {
 //
 // Load and deploy two App ServicePlans for Linux and Windows to be used by further modules.
 //
-var appServiceKind = [{ skuName: 'B1', skuType: 'linux', skuTier: 'Basic', skuCapacity: 1}]
-// , { skuName: 'Y1', skuType: 'functionapp', skuTier: 'Dynamic', skuCapacity: 0 }
+var appServiceKind = [//{ skuName: 'B1', skuType: 'linux', skuTier: 'Basic', skuCapacity: 1}
+ { skuName: 'Y1', skuType: 'functionapp', skuTier: 'Dynamic', skuCapacity: 0 }]
+
 module appServicePlan 'modules/appserviceplan/main.bicep' = [for ask in appServiceKind: {
   name: 'appServicePlan_${ask.skuType}'
   scope: resourceGroup(resourceGroupName)
@@ -48,7 +49,7 @@ module appServicePlan 'modules/appserviceplan/main.bicep' = [for ask in appServi
 //
 // Load and deploy the Azure Functions module
 //
-var functionAppNames = ['attendees', 'attendeesbyorg', 'publiccourses', 'courses', 'mapping-appsetings']
+var functionAppNames = ['mitmbusting']
 
 module function_app 'modules/functionapp/main.bicep' = [for faName in functionAppNames: {
   name: '${servicePrefix}-fa-${faName}-${deploymentEnvironment}'

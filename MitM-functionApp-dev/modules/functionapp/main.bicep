@@ -11,31 +11,8 @@ param location string
 @description('Optional. Tags for all resources within Azure Function App module.')
 param tags object = {}
 
-@description('Required. Defines the name, tier, size, family and capacity of the app service plan.')
-param sku object = {
-  name: 'Y1'
-  tier: 'Dynamic'
-  size: 'Y1'
-  family: 'Y'
-  capacity: 0
-}
-
-@description('Optional. Kind of server OS.')
-@allowed([ 'Windows', 'Linux' ])
-param serverOS string = 'Windows'
-
-@description('Optional. If true, apps assigned to this app service plan can be scaled independently. If false, apps assigned to this app service plan will scale to all instances of the plan.')
-param perSiteScaling bool = false
-
-@description('Optional. Maximum number of total workers allowed for this ElasticScaleEnabled app service plan.')
-param maximumElasticWorkerCount int = 0
-
-@description('Optional. Scaling worker count.')
-param targetWorkerCount int = 0
-
-@description('Optional. The instance size of the hosting plan (small, medium, or large).')
-@allowed([ 0, 1, 2 ])
-param targetWorkerSizeId int = 0
+@description('ServerfarmId from app service plan')
+param serverfarmsId string
 
 @allowed(['None', 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'
 ])
@@ -115,9 +92,6 @@ param branch string = 'main'
 @secure()
 param storageAccountName string
 
-@description('Required. Storage account Key.')
-param storageAccountKey string
-
 @description('Optional. to limit to manual integration; to enable continuous integration (which configures webhooks into online repos like GitHub).')
 param isManualIntegration bool = true
 
@@ -151,9 +125,6 @@ APPINSIGHTS_INSTRUMENTATIONKEY
 APPLICATIONINSIGHTS_CONNECTION_STRING''')
 param extraAppSettings object = {}
 
-@description('The kind of resource. Empty string means windows.')
-var servicePlanKind = serverOS == 'Linux' ? toLower(serverOS) : ''
-
 @description('The state of FTP / FTPS service.')
 @allowed(['Disabled', 'AllAllowed', 'FtpsOnly'])
 param ftpsState string = 'Disabled'
@@ -174,21 +145,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-06-01' existing 
   scope: resourceGroup(storageAccountResourceGroup)
 }
 
-@description('Defines Application service plan.')
-resource serverfarms 'Microsoft.Web/serverfarms@2021-02-01' = {
-  name: name
-  location: location
-  tags: tags
-  sku: sku
-  kind: servicePlanKind
-  properties: {
-    perSiteScaling: perSiteScaling
-    maximumElasticWorkerCount: maximumElasticWorkerCount
-    reserved: serverOS == 'Linux'
-    targetWorkerCount: targetWorkerCount
-    targetWorkerSizeId: targetWorkerSizeId
-  }
-}
+// TÄSTÄ ON POISTETTU resource serverfarms 'Microsoft.Web/serverfarms@2021-02-01'
 
 @description('If enabled, this will help monitor the application using the log analytics workspace.')
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = if (enableInsights) {
@@ -223,7 +180,7 @@ resource sites 'Microsoft.Web/sites@2023-01-01' = {
       ftpsState: ftpsState
       minTlsVersion: minTlsVersion
     }
-    serverFarmId: serverfarms.id
+    serverFarmId: serverfarmsId
     httpsOnly: httpsOnly
     hostingEnvironmentProfile: !empty(appServiceEnvironmentId) ? {
       id: appServiceEnvironmentId
@@ -269,12 +226,10 @@ resource networkConfig 'Microsoft.Web/sites/networkConfig@2023-01-01' = if (enab
 @description('The resources actual is function where code exits.')
 resource azureFunction 'Microsoft.Web/sites/functions@2023-01-01' = {
   dependsOn: [
-    serverfarms
     config
   ]
   parent:sites
   name:'dnslookup'
-  location:location
   properties:{
     script_root_path_href:'https://${name}.azurewebsites.net/admin/vfs/site/wwwroot/dnslookup/'
     script_href: 'https://${name}.azurewebsites.net/admin/vfs/site/wwwroot/dnslookup/run.csx'
@@ -313,7 +268,6 @@ resource extensions 'Microsoft.Web/sites/extensions@2023-01-01' = if (enablePack
 resource hostname 'Microsoft.Web/sites/hostNameBindings@2023-01-01' = {
   parent: sites
   name: '${name}.azurewebsites.net'
-  location: location
   properties: {
     siteName: name
     hostNameType: 'Verified'
@@ -323,8 +277,6 @@ resource hostname 'Microsoft.Web/sites/hostNameBindings@2023-01-01' = {
 resource scm 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01' = {
   parent: sites
   name: 'scm'
-  location: location
-  tags:tags
   properties: {
     allow: false
   }
@@ -333,8 +285,6 @@ resource scm 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01'
 resource ftp 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-01-01' = {
   parent: sites
   name: 'ftp'
-  location: location
-  tags: tags
   properties: {
     allow: false
   }
@@ -346,12 +296,6 @@ output siteId string = sites.id
 
 @description('Get resource name for app or functionapp.')
 output siteName string = sites.name
-
-@description('Get resource ID of the app service plan.')
-output serverfarmsId string = serverfarms.id
-
-@description('Get name of the app service plan.')
-output serverfarmsName string = serverfarms.name
 
 @description('Array of functions having name , language,isDisabled and id of functions.')
 output functions array = [for function in functions: {

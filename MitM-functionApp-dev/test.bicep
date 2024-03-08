@@ -5,7 +5,7 @@ param resourceGroupName string = resourceGroup().name
 
 @description('Required. Name for the Azure Function App.')
 @maxLength(64)
-param name string = 'fa-20240308-dev3'
+param name string = 'fa-20240308-dev2'
 
 @description('Specifies the location for resources.')
 param location string = resourceGroup().location
@@ -18,7 +18,7 @@ var storageAccountName = toLower(replace('${name}-storage','-',''))
 //
 // Load and create a storage account
 //
-module Storage 'modules/storageaccount/main.bicep' = {
+module storage 'modules/storageaccount/main.bicep' = {
   name: storageAccountName
   scope: resourceGroup(resourceGroupName)
   params: {
@@ -28,7 +28,7 @@ module Storage 'modules/storageaccount/main.bicep' = {
   }
 }
 
-module AppServicePlan 'modules/appserviceplan/main.bicep' = {
+module appserviceplan 'modules/appserviceplan/main.bicep' = {
   name: name
   scope: resourceGroup(resourceGroupName)
   params:{
@@ -38,18 +38,17 @@ module AppServicePlan 'modules/appserviceplan/main.bicep' = {
   }
 }
 
-module function_app 'modules/functionapp/main.bicep' = {
+module functionapp 'exportattu/updated-function.bicep' = {
   name: name
   scope: resourceGroup(resourceGroupName)
-  dependsOn: [
-    Storage
-    AppServicePlan
+  dependsOn:[
+    storage
+    appserviceplan
   ]
-  params: {
+  params:{
     name: name
     location: location
-    storageAccountName: Storage.outputs.storageAccountName
-    tags:tags
-    serverfarmsId: AppServicePlan.outputs.serverfarmsId
+    tags: tags
+    serverFarmId: appserviceplan.outputs.serverfarmsId
   }
 }
