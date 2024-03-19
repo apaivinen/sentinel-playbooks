@@ -7,3 +7,8 @@ https://raw.githubusercontent.com/Azure/bicep-registry-modules/main/modules/stor
 https://azure.github.io/bicep-registry-modules/
 
 https://azure.github.io/Azure-Verified-Modules/indexes/bicep/
+
+```powershell
+git clone https://github.com/Azure/bicep-registry-modules.git
+```
+

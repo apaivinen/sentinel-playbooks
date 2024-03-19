@@ -14,8 +14,7 @@ param tags object = {}
 @description('ServerfarmId from app service plan')
 param serverfarmsId string
 
-@allowed(['None', 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'
-])
+@allowed(['None', 'SystemAssigned', 'UserAssigned', 'SystemAssigned, UserAssigned'])
 @description('Optional. The type of identity used for the virtual machine. The type \'SystemAssigned, UserAssigned\' includes both an implicitly created identity and a set of user assigned identities. The type \'None\' will remove any identities from the sites ( app or functionapp).')
 param identityType string = 'SystemAssigned'
 
@@ -32,7 +31,7 @@ param appServiceEnvironmentId string = ''
 param clientAffinityEnabled bool = true
 
 @description('Required. Type of site to deploy.')
-@allowed([ 'functionapp', 'app' ])
+@allowed(['functionapp', 'app'])
 param kind string = 'functionapp'
 
 @description('Optional. Version of the function extension.')
@@ -49,16 +48,16 @@ param functionsWorkerRuntime string = 'dotnet'
 @description('Optional. NodeJS version.')
 param functionsDefaultNodeversion string = '~14'
 
-@allowed([ 'Disabled', 'Enabled' ])
+@allowed(['Disabled', 'Enabled'])
 @description('Optional. The network access type for accessing Application Insights ingestion. - Enabled or Disabled.')
 param publicNetworkAccessForIngestion string = 'Enabled'
 
-@allowed([ 'Disabled', 'Enabled' ])
+@allowed(['Disabled', 'Enabled'])
 @description('Optional. The network access type for accessing Application Insights query. - Enabled or Disabled.')
 param publicNetworkAccessForQuery string = 'Enabled'
 
 @description('Optional. Application type.')
-@allowed([ 'web', 'other' ])
+@allowed(['web', 'other'])
 param appInsightsType string = 'web'
 
 @description('Optional. The kind of application that this component refers to, used to customize UI.')
@@ -148,18 +147,19 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-06-01' existing 
 // TÄSTÄ ON POISTETTU resource serverfarms 'Microsoft.Web/serverfarms@2021-02-01'
 
 @description('If enabled, this will help monitor the application using the log analytics workspace.')
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = if (enableInsights) {
-  name: 'ai-${name}'
-  location: location
-  kind: appInsightsKind
-  properties: {
-    Application_Type: appInsightsType
-    WorkspaceResourceId: workspaceResourceId
-    publicNetworkAccessForIngestion: publicNetworkAccessForIngestion
-    publicNetworkAccessForQuery: publicNetworkAccessForQuery
+resource appInsights 'Microsoft.Insights/components@2020-02-02' =
+  if (enableInsights) {
+    name: 'ai-${name}'
+    location: location
+    kind: appInsightsKind
+    properties: {
+      Application_Type: appInsightsType
+      WorkspaceResourceId: workspaceResourceId
+      publicNetworkAccessForIngestion: publicNetworkAccessForIngestion
+      publicNetworkAccessForQuery: publicNetworkAccessForQuery
+    }
+    tags: tags
   }
-  tags: tags
-}
 
 @description('''The app or function app resource.
 Note: This is not actual Azure Function App this will be container for storing multiple functions.''')
@@ -170,9 +170,11 @@ resource sites 'Microsoft.Web/sites@2023-01-01' = {
   kind: kind
   identity: {
     type: identityType
-    userAssignedIdentities: (identityType == 'UserAssigned' || identityType == 'SystemAssigned, UserAssigned') ? {
-      '${userAssignedIdentityId}': {}
-    } : null
+    userAssignedIdentities: (identityType == 'UserAssigned' || identityType == 'SystemAssigned, UserAssigned')
+      ? {
+          '${userAssignedIdentityId}': {}
+        }
+      : null
   }
   properties: {
     siteConfig: {
@@ -182,9 +184,11 @@ resource sites 'Microsoft.Web/sites@2023-01-01' = {
     }
     serverFarmId: serverfarmsId
     httpsOnly: httpsOnly
-    hostingEnvironmentProfile: !empty(appServiceEnvironmentId) ? {
-      id: appServiceEnvironmentId
-    } : null
+    hostingEnvironmentProfile: !empty(appServiceEnvironmentId)
+      ? {
+          id: appServiceEnvironmentId
+        }
+      : null
     clientAffinityEnabled: clientAffinityEnabled
   }
 }
@@ -193,45 +197,64 @@ resource sites 'Microsoft.Web/sites@2023-01-01' = {
 resource config 'Microsoft.Web/sites/config@2023-01-01' = {
   parent: sites
   name: 'appsettings'
-  properties: union({
-      AzureWebJobsStorage: !empty(storageAccount.id) ? 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};' : any(null)
-      AzureWebJobsDashboard: !empty(storageAccount.id) ? 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};' : any(null)
+  properties: union(
+    {
+      AzureWebJobsStorage: !empty(storageAccount.id)
+        ? 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};'
+        : any(null)
+      AzureWebJobsDashboard: !empty(storageAccount.id)
+        ? 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};'
+        : any(null)
       WEBSITE_CONTENTSHARE: name
-      WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: !empty(storageAccount.id) ? 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};' : any(null)
+      WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: !empty(storageAccount.id)
+        ? 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};'
+        : any(null)
       FUNCTIONS_EXTENSION_VERSION: functionsExtensionVersion
       FUNCTION_APP_EDIT_MODE: functionAppEditMode
-      FUNCTIONS_WORKER_RUNTIME: sites.kind == 'functionapp' && !empty(functionsWorkerRuntime) ? functionsWorkerRuntime : any(null)
-      WEBSITE_NODE_DEFAULT_VERSION: sites.kind == 'functionapp' && functionsWorkerRuntime == 'node' && !empty(functionsDefaultNodeversion) ? functionsDefaultNodeversion : any(null)
-      APPINSIGHTS_INSTRUMENTATIONKEY: !empty(appInsights.id) && enableInsights ? appInsights.properties.InstrumentationKey : any(null)
-      APPLICATIONINSIGHTS_CONNECTION_STRING: !empty(appInsights.id) && enableInsights ? appInsights.properties.ConnectionString : any(null)
-    }, extraAppSettings)
-  dependsOn: enableVnetIntegration ? [ networkConfig ] : []
+      FUNCTIONS_WORKER_RUNTIME: sites.kind == 'functionapp' && !empty(functionsWorkerRuntime)
+        ? functionsWorkerRuntime
+        : any(null)
+      WEBSITE_NODE_DEFAULT_VERSION: sites.kind == 'functionapp' && functionsWorkerRuntime == 'node' && !empty(functionsDefaultNodeversion)
+        ? functionsDefaultNodeversion
+        : any(null)
+      APPINSIGHTS_INSTRUMENTATIONKEY: !empty(appInsights.id) && enableInsights
+        ? appInsights.properties.InstrumentationKey
+        : any(null)
+      APPLICATIONINSIGHTS_CONNECTION_STRING: !empty(appInsights.id) && enableInsights
+        ? appInsights.properties.ConnectionString
+        : any(null)
+    },
+    extraAppSettings
+  )
+  dependsOn: enableVnetIntegration ? [networkConfig] : []
 }
 
-resource connectionString 'Microsoft.Web/sites/config@2023-01-01' = if (!empty(connectionStringProperties)) {
-  name: 'connectionstrings'
-  kind: 'string'
-  parent: sites
-  properties: connectionStringProperties
-}
-
-resource networkConfig 'Microsoft.Web/sites/networkConfig@2023-01-01' = if (enableVnetIntegration == true) {
-  parent: sites
-  name: 'virtualNetwork'
-  properties: {
-    subnetResourceId: subnetId
+resource connectionString 'Microsoft.Web/sites/config@2023-01-01' =
+  if (!empty(connectionStringProperties)) {
+    name: 'connectionstrings'
+    kind: 'string'
+    parent: sites
+    properties: connectionStringProperties
   }
-}
+
+resource networkConfig 'Microsoft.Web/sites/networkConfig@2023-01-01' =
+  if (enableVnetIntegration == true) {
+    parent: sites
+    name: 'virtualNetwork'
+    properties: {
+      subnetResourceId: subnetId
+    }
+  }
 
 @description('The resources actual is function where code exits.')
 resource azureFunction 'Microsoft.Web/sites/functions@2023-01-01' = {
   dependsOn: [
     config
   ]
-  parent:sites
-  name:'dnslookup'
-  properties:{
-    script_root_path_href:'https://${name}.azurewebsites.net/admin/vfs/site/wwwroot/dnslookup/'
+  parent: sites
+  name: 'dnslookup'
+  properties: {
+    script_root_path_href: 'https://${name}.azurewebsites.net/admin/vfs/site/wwwroot/dnslookup/'
     script_href: 'https://${name}.azurewebsites.net/admin/vfs/site/wwwroot/dnslookup/run.csx'
     config_href: 'https://${name}.azurewebsites.net/admin/vfs/site/wwwroot/dnslookup/function.json'
     test_data_href: 'https://${name}.azurewebsites.net/admin/vfs/data/Functions/sampledata/dnslookup.dat'
@@ -244,26 +267,27 @@ resource azureFunction 'Microsoft.Web/sites/functions@2023-01-01' = {
   }
 }
 
-resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2023-01-01' = if (enableSourceControl) {
-  parent: sites
-  name: 'web'
-  properties: {
-    repoUrl: repoUrl
-    branch: branch
-    isManualIntegration: isManualIntegration
-    isMercurial: isMercurial
+resource sourcecontrol 'Microsoft.Web/sites/sourcecontrols@2023-01-01' =
+  if (enableSourceControl) {
+    parent: sites
+    name: 'web'
+    properties: {
+      repoUrl: repoUrl
+      branch: branch
+      isManualIntegration: isManualIntegration
+      isMercurial: isMercurial
+    }
   }
-}
 
 @description('Deploy function app from zip file.')
-resource extensions 'Microsoft.Web/sites/extensions@2023-01-01' = if (enablePackageDeploy) {
-  parent: sites
-  name: 'MSDeploy'
-  properties: {
-    packageUri: functionPackageUri
+resource extensions 'Microsoft.Web/sites/extensions@2023-01-01' =
+  if (enablePackageDeploy) {
+    parent: sites
+    name: 'MSDeploy'
+    properties: {
+      packageUri: functionPackageUri
+    }
   }
-}
-
 
 resource hostname 'Microsoft.Web/sites/hostNameBindings@2023-01-01' = {
   parent: sites
@@ -298,17 +322,18 @@ output siteId string = sites.id
 output siteName string = sites.name
 
 @description('Array of functions having name , language,isDisabled and id of functions.')
-output functions array = [for function in functions: {
-  name: function.name
-  language: function.properties.language
-  isDisabled: function.properties.isDisabled
-  id: '${sites.id}/functions/${function.name}'
-  files: function.properties.files
-}]
+output functions array = [
+  for function in functions: {
+    name: function.name
+    language: function.properties.language
+    isDisabled: function.properties.isDisabled
+    id: '${sites.id}/functions/${function.name}'
+    files: function.properties.files
+  }
+]
 
 @description('Principal Id of the identity assigned to the function app.')
 output sitePrincipalId string = (sites.identity.type == 'SystemAssigned') ? sites.identity.principalId : ''
-
 
 // user defined types
 type functionType = {
