@@ -37,5 +37,5 @@ resource sa 'Microsoft.Storage/storageAccounts@2021-06-01' = {
 }
 
 output storageAccountName string = storageAccountName
-//output storageAccountId string = sa.id
-//output storageAccountKey string = sa.listKeys().keys[0].value
+output storageAccountId string = sa.id
+output storageAccountKey string = sa.listKeys().keys[0].value
