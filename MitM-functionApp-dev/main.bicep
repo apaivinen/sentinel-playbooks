@@ -2,6 +2,8 @@ metadata name = 'MitM busting Apps'
 metadata description = 'This bicep deploys sentinel man in the middle playbook resources.'
 metadata author = 'Anssi Päivinen'
 metadata Created = '2024-03-19'
+metadata sourceinformation = 'Everything under web-folder is from Azure Verified Modules. Rest of the files are by by author.'
+metadata AVMGithublink = 'https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/web'
 
 targetScope = 'resourceGroup'
 
@@ -130,7 +132,7 @@ var logAnalyticsConnectorName = replace('${servicePrefix}-${name}-LogAnalyticsCo
 //
 // Load and create a storage account
 //
-module Storage 'modules/storageaccount/main.bicep' = {
+module Storage 'modules/StorageAccount/main.bicep' = {
   name: storageAccountName
   scope: resourceGroup(resourceGroupName)
   params: {
@@ -143,7 +145,7 @@ module Storage 'modules/storageaccount/main.bicep' = {
 //
 // Load and create a App service plan
 //
-module AppServicePlan 'modules/appserviceplan/main.bicep' = {
+module AppServicePlan 'modules/AppServicePlan/main.bicep' = {
   name: AppServiceName
   scope: resourceGroup(resourceGroupName)
   params:{
@@ -193,7 +195,7 @@ module functionApp 'modules/web/site/main.bicep'= {
     storageAccountUseIdentityAuthentication: true
   }
 }
-module connector 'modules/connector/main.bicep'={
+module connector 'modules/connectors/logAnalyticsDataCollector.bicep'={
   name: logAnalyticsConnectorName
   scope: resourceGroup(resourceGroupName)
   params:{
