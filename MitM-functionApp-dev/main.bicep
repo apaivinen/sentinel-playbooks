@@ -1,5 +1,5 @@
-metadata name = 'MitM busting Apps'
-metadata description = 'This bicep deploys sentinel man in the middle playbook resources.'
+metadata name = 'MitM CSS Detection'
+metadata description = 'This bicep deploys Sentinel Man in the Middle playbook resources.'
 metadata author = 'Anssi Päivinen'
 metadata Created = '2024-03-19'
 metadata sourceinformation = 'Everything under web-folder is from Azure Verified Modules. Rest of the files are by by author.'
@@ -111,10 +111,6 @@ param tags object = {resource:'${servicePrefix}-${name}-${deploymentEnvironment}
 @description('Required. Type of function app to deploy.')
 @allowed([
   'functionapp' // function app windows os
-  'functionapp,linux' // function app linux os
-  'functionapp,workflowapp' // logic app workflow
-  'functionapp,workflowapp,linux' // logic app docker container
-  'app' // normal web app
 ])
 param FunctionAppkind string = 'functionapp'
 
@@ -125,7 +121,7 @@ var storageAccountName = take(toLower(replace('${servicePrefix}${name}${deployme
 var AppServiceName = replace('${servicePrefix}-${name}-AppServ-${deploymentEnvironment}',' ','')
 var functionAppName = replace('${servicePrefix}-${name}-FuncApp-${deploymentEnvironment}',' ','')
 var functionAppWebsiteContentShare = replace(toLower('${functionAppName}${substring(uniqueString(deployment().name, location), 0, 4)}'),' ','')
-var logicAppName =  replace('${servicePrefix}-${name}-CssDetection-LogicApp-${deploymentEnvironment}',' ','')
+var logicAppName =  replace('${servicePrefix}-${name}CssDetection-LogicApp-${deploymentEnvironment}',' ','')
 var logAnalyticsConnectorName = replace('${servicePrefix}-${name}-LogAnalyticsConnector-${deploymentEnvironment}',' ','')
 
 
