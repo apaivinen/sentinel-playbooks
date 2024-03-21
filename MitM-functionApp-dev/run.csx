@@ -29,8 +29,13 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     string host = uri.Host;
     string[] parts = host.Split('.');
     string domain = string.Join(".", parts.Skip(Math.Max(0, parts.Length - 2)));
-    string subdomain = string.Join(".", parts.Take(parts.Length - 2));
-    string fullDomain = subdomain + "." + domain;
+    List<string> subdomainParts = parts.Take(parts.Length - 2).ToList();
+
+    // Remove 'www' from the subdomain parts
+    subdomainParts.RemoveAll(part => part.ToLower() == "www");
+
+    string subdomain = string.Join(".", subdomainParts);
+    string fullDomain = subdomain.Length > 0 ? subdomain + "." + domain : domain;
 
     log.LogInformation("Url parsed to domain: "+fullDomain);
 
