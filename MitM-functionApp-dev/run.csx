@@ -18,55 +18,56 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
     dynamic data = JsonConvert.DeserializeObject(requestBody);
     url = url ?? data?.url;
-    log.LogInformation("Got url: "+url);
+    log.LogInformation("Got url: " + url);
 
     bool isIpAddress = IsIpAddress(url);
-    log.LogInformation("is url IP? "+isIpAddress);
-    if(!isIpAddress){
-
-    log.LogInformation("Parsing url to queryable form");
-    Uri uri = new Uri(url);
-    string host = uri.Host;
-    string[] parts = host.Split('.');
-    string domain = string.Join(".", parts.Skip(Math.Max(0, parts.Length - 2)));
-    List<string> subdomainParts = parts.Take(parts.Length - 2).ToList();
-
-    // Remove 'www' from the subdomain parts
-    subdomainParts.RemoveAll(part => part.ToLower() == "www");
-
-    string subdomain = string.Join(".", subdomainParts);
-    string fullDomain = subdomain.Length > 0 ? subdomain + "." + domain : domain;
-
-    log.LogInformation("Url parsed to domain: "+fullDomain);
-
-    log.LogInformation("Starting DNS query");
-    IPHostEntry hostEntry = null;
-    string errorMessage = null;
-    try
+    log.LogInformation("is url IP? " + isIpAddress);
+    if (!isIpAddress)
     {
-        hostEntry = await Dns.GetHostEntryAsync(fullDomain);
-        log.LogInformation("DNS Query done");
-    }
-    catch (Exception ex)
-    {
-        errorMessage = $"DNS Query failed with message: {ex.Message} ";
-        log.LogError(errorMessage);
-        return new OkObjectResult(JsonConvert.SerializeObject($"{errorMessage}"));
-    }
 
-    log.LogInformation("Starting to parse DNS results");
-    IPAddress[] address = hostEntry.AddressList;
-    var ipArray = address.Select(ip => ip.ToString()).ToArray();
-    
-    log.LogInformation("The end. Returning array of IP addresses to caller.");
-    return new OkObjectResult(JsonConvert.SerializeObject(ipArray));
+        log.LogInformation("Parsing url to queryable form");
+        Uri uri = new Uri(url);
+        string host = uri.Host;
+        string[] parts = host.Split('.');
+        string domain = string.Join(".", parts.Skip(Math.Max(0, parts.Length - 2)));
+        List<string> subdomainParts = parts.Take(parts.Length - 2).ToList();
+
+        // Remove 'www' from the subdomain parts
+        subdomainParts.RemoveAll(part => part.ToLower() == "www");
+
+        string subdomain = string.Join(".", subdomainParts);
+        string fullDomain = subdomain.Length > 0 ? subdomain + "." + domain : domain;
+
+        log.LogInformation("Url parsed to domain: " + fullDomain);
+
+        log.LogInformation("Starting DNS query");
+        IPHostEntry hostEntry = null;
+        string errorMessage = null;
+        try
+        {
+            hostEntry = await Dns.GetHostEntryAsync(fullDomain);
+            log.LogInformation("DNS Query done");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"DNS Query failed with message: {ex.Message} ";
+            log.LogError(errorMessage);
+            return new OkObjectResult(JsonConvert.SerializeObject($"{errorMessage}"));
+        }
+
+        log.LogInformation("Starting to parse DNS results");
+        IPAddress[] address = hostEntry.AddressList;
+        var ipArray = address.Select(ip => ip.ToString()).ToArray();
+
+        log.LogInformation("The end. Returning array of IP addresses to caller.");
+        return new OkObjectResult(JsonConvert.SerializeObject(ipArray));
     }// if ends
     else// If url contains IP address
     {
-        
+
         return new OkObjectResult(ExtractIpAddress(url));
     }// else ends
-    
+
 }
 
 // Check if provided value contains IP address
@@ -103,7 +104,7 @@ public static string ExtractIpAddress(string input)
     Match match = Regex.Match(input, ipPattern);
     if (match.Success)
     {
-        ip = "[\""+match.Value+"\"]";
+        ip = "[\"" + match.Value + "\"]";
         return ip;
     }
     else
