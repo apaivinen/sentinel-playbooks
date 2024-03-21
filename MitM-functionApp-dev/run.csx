@@ -20,6 +20,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     url = url ?? data?.url;
     log.LogInformation("Got url: " + url);
 
+    // Check if it's IP or domain
     bool isIpAddress = IsIpAddress(url);
     log.LogInformation("is url IP? " + isIpAddress);
     if (!isIpAddress)
@@ -40,6 +41,7 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
 
         log.LogInformation("Url parsed to domain: " + fullDomain);
 
+        // DNS Query
         log.LogInformation("Starting DNS query");
         IPHostEntry hostEntry = null;
         string errorMessage = null;
@@ -64,7 +66,6 @@ public static async Task<IActionResult> Run(HttpRequest req, ILogger log)
     }// if ends
     else// If url contains IP address
     {
-
         return new OkObjectResult(ExtractIpAddress(url));
     }// else ends
 
