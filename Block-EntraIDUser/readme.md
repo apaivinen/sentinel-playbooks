@@ -1,36 +1,41 @@
-# Block-EntraIDUser WORK IN PROGRESS
+# Block-EntraIDUser
 
 # Description
-Just a simple Block entra id user from signin in playbook for Microsoft Sentinel.  
-This playbook utilizes Microsoft Graph via managed identity.
+Just a simple playbook for blocking entra id account from signin-in.  
+Here's bicep templates for Entity and Incident triggers
 
- A global administrator assigned the Directory.AccessAsUser.All delegated permission can update the accountEnabled status of all administrators in the tenant.
+Remember to update following params in bicep file:
+- servicePrefix
+- createdBy
+### Outline for incident trigger
+1. Logic app triggered from incident
+2. Gets accounts
+3. Initializes Arrays for reply (Success & Error)
+4. Loops through accounts
+5. Users are blocked by using [Update user](https://learn.microsoft.com/en-us/graph/api/user-update) endpoint property `accountEnabled`
+    - If `HTTP - Block user` is successful append success text to success array
+    - If `HTTP - Block user` failes then append error text to error array
+6. Comment to incident with success & error array results
 
-res folder contains [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) for Azure resources. Rest of the files are by author.
+
+![Logic App Outline](.\img\Incident-outline-1.png)
+![Logic App Outline](.\img\Incident-outline-2.png)
 
 ### Outline for entity trigger
 1. Logic app triggered from entity
 2. User is blocked by using [Update user](https://learn.microsoft.com/en-us/graph/api/user-update) endpoint property `accountEnabled`
-3. Check if incident ID is null. If yes terminate the logic app run
-4. If incident ID is present then get users manager by using [List Manager](https://learn.microsoft.com/en-us/graph/api/user-list-manager) endpoint
-5. Parse the results and respond to incident with comment
+3. ???
+4. yeah it's done. (or atleast should be...)
 
-![Logic App Outline](.\img\LogicAppOutline.png)
+![Logic App Outline](.\img\Entity-outline.png)
 
-### Outline for incident trigger
-1. Logic app triggered from incident
-2. Loop through users
-2. Users are blocked by using [Update user](https://learn.microsoft.com/en-us/graph/api/user-update) endpoint property `accountEnabled`
-4. Get managers for indivinidual users by using [List Manager](https://learn.microsoft.com/en-us/graph/api/user-list-manager) endpoint
-5. Parse the results and respond to incident with comment, one comment for each user
-
-## ToDo
-3. Create a bicep template 
 
 ## Files
-- main.bicep
-- entity.bicepparam
-- incident.bicepparam
+- Entity
+    - main.bicep
+- Incident
+    - main.bicep
+
 
 # Prequisites
 - Azure Subscription with resource group for logic app
@@ -40,27 +45,46 @@ res folder contains [Azure Verified Modules](https://azure.github.io/Azure-Verif
 
 # Post-deployment
 
-1. Add sentinel responder role to Block-EntraIdUser managed identity/identities
-2. Assign User Administartor role to managed identity
-2. assign permissions to managed identity - OBSOLETE - needs more investigation
+1. Add sentinel responder role to Block-EntraIdUser-Incident managed identity
+2. Assign permissions to managed identity, see powershell bellow
 ```powershell
-# Add the 'Object (principal) ID' for the Managed Identity
-$ObjectId = "<Enter your managed identity guid here>"
+# Add the correct 'Object (principal) ID' for the Managed Identity
+$ObjectId = "OBJECTID"
 
-# Add the Graph scope to grant
-$graphScope = "User.ManageIdentities.All"
+# Add the correct Graph scopes to grant (multiple scopes)
+$graphScopes = @(
+    "User.ManageIdentities.All", 
+    "User.EnableDisableAccount.All"
+)
 
+# Connect to Microsoft Graph
 Connect-MgGraph -Scope AppRoleAssignment.ReadWrite.All
-$graph = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
-$graphAppRole = $graph.AppRoles | ? Value -eq $graphScope
 
-$appRoleAssignment = @{
-    "principalId" = $ObjectId
-    "resourceId"  = $graph.Id
-    "appRoleId"   = $graphAppRole.Id
+# Get the Graph Service Principal
+$graph = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+
+# Loop through each scope and assign the role
+foreach ($graphScope in $graphScopes) {
+    # Find the corresponding AppRole for the current scope
+    $graphAppRole = $graph.AppRoles | Where-Object { $_.Value -eq $graphScope }
+
+    if ($graphAppRole) {
+        # Prepare the AppRole Assignment
+        $appRoleAssignment = @{
+            "principalId" = $ObjectId
+            "resourceId"  = $graph.Id
+            "appRoleId"   = $graphAppRole.Id
+        }
+
+        # Assign the role
+        New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $ObjectId -BodyParameter $appRoleAssignment | Format-List
+        Write-Host "Assigned $graphScope to Managed Identity $ObjectId"
+    } else {
+        Write-Warning "AppRole for scope '$graphScope' not found."
+    }
 }
 
-New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $ObjectID -BodyParameter $appRoleAssignment | Format-List
+
 ```
 
 
@@ -70,3 +94,4 @@ New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $ObjectID -BodyParam
 |2023-12-21|Initial development|
 |2024-04-11|Created bicep files|
 |2024-04-15|Initial readme|
+|2024-11-24|Created incident and entity playbooks & updated bicep files|
