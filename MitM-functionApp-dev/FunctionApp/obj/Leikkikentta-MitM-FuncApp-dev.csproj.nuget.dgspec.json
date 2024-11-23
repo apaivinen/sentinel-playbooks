@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\PERSONAL\\Git\\sentinel-playbooks\\MitM-functionApp-dev\\FunctionApp\\Leikkikentta-MitM-FuncApp-dev.csproj": {}
+  },
+  "projects": {
+    "C:\\PERSONAL\\Git\\sentinel-playbooks\\MitM-functionApp-dev\\FunctionApp\\Leikkikentta-MitM-FuncApp-dev.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\PERSONAL\\Git\\sentinel-playbooks\\MitM-functionApp-dev\\FunctionApp\\Leikkikentta-MitM-FuncApp-dev.csproj",
+        "projectName": "Leikkikentta-MitM-FuncApp-dev",
+        "projectPath": "C:\\PERSONAL\\Git\\sentinel-playbooks\\MitM-functionApp-dev\\FunctionApp\\Leikkikentta-MitM-FuncApp-dev.csproj",
+        "packagesPath": "C:\\Users\\anssi.paivinen\\.nuget\\packages\\",
+        "outputPath": "C:\\PERSONAL\\Git\\sentinel-playbooks\\MitM-functionApp-dev\\FunctionApp\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\anssi.paivinen\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net461"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net461": {
+            "targetAlias": "net461",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net461": {
+          "targetAlias": "net461",
+          "dependencies": {
+            "Microsoft.NET.Sdk.Functions": {
+              "target": "Package",
+              "version": "[1.0.8, )"
+            },
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.306\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

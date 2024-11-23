@@ -15,7 +15,7 @@ param siteConfigs = {
     'default.aspx'
     'index.php'
   ]
-  netFrameworkVersion: 'v6.0'
+  netFrameworkVersion: 'v8.0'
   requestTracingEnabled: false
   remoteDebuggingEnabled: false
   httpLoggingEnabled: false
@@ -68,6 +68,14 @@ param siteConfigs = {
       priority: 300
       name: 'anssi-ip'
       description: 'anssi'
+    }
+    {
+      ipAddress: '194.100.36.100/32'
+      action: 'Allow'
+      tag: 'Default'
+      priority: 301
+      name: 'toimisto'
+      description: 'tsto'
     }
     {
       ipAddress: 'Any'

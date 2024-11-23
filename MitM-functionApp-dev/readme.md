@@ -10,23 +10,26 @@ https://azure.github.io/Azure-Verified-Modules/indexes/bicep/
 
 ```powershell
 git clone https://github.com/Azure/bicep-registry-modules.git
-```
+```cd 
 
 
 ## Steps to deploy
 Deployment tested successfully with:  
-- powershell version 7.4.1 
-- Azure cli version 11.4.0  
-- Bicep version v0.26.54  
+- powershell version 7.4.5 
+- Azure cli version 2.58.0  
+- Bicep version v0.30.23  
 
 
 ```powershell
-Connect-AzAccount
+az login
 
 az deployment group create --name "keskiviikon-testausta-1" --resource-group "DEV-mitmbusting" --template-file main.bicep
 
 # Testing
-az deployment group create --name "keskiviikon-testausta-1" --resource-group "DEV-mitmbusting" --parameters main.bicepparam
+az deployment group create --name "2024-10-09-test-1" --resource-group "DEV-mitmbusting" --parameters main.bicepparam
+
+# Deploy function app code
+az functionapp deployment source config-zip --resource-group "DEV-mitmbusting" --name  "Leikkikentta-MitM-FuncApp-dev" --src .\FunctionApp.zip
 
 ```
 
@@ -81,6 +84,8 @@ Trigger condition expressions
 @or(equals(equals(triggerOutputs()?['headers']?['Referer'],'https://login.microsoftonline.com/'), false))
 @or(equals(equals(triggerOutputs()?['headers']?['Referer'],'https://login.microsoft.com/'), false))
 @or(equals(startsWith(triggerOutputs()?['headers']?['Referer'],'https://management.azure.com/'), false))
+@or(equals(equals(triggerOutputs()?['headers']?['Referer'],'https://autologon.microsoftazuread-sso.com/'), false))
+@or(equals(endsWith(triggerOutputs()?['headers']?['Referer'],'office.com/'), false))
 @or(equals(endsWith(triggerOutputs()?['headers']?['Referer'],'.logic.azure.com/'), false))
 @or(equals(equals(triggerOutputs()?['headers']?['Referer'],null), false))
 ```

@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Leikkikentta-MitM-FuncApp-dev
+build_property.ProjectDir = C:\PERSONAL\Git\sentinel-playbooks\MitM-functionApp-dev\FunctionApp\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

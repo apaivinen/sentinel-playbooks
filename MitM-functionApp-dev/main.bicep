@@ -2,6 +2,8 @@ metadata name = 'MitM CSS Detection'
 metadata description = 'This bicep deploys Sentinel Man in the Middle playbook resources.'
 metadata author = 'Anssi Päivinen'
 metadata Created = '2024-03-19'
+metadata Modified = '2024-10-21'
+metadata ChangeReason = 'Updated .net version to 8.0 and automated the deployment'
 metadata sourceinformation = 'Everything under web-folder is from Azure Verified Modules. Rest of the files are by by author.'
 metadata AVMGithublink = 'https://github.com/Azure/bicep-registry-modules/tree/main/avm/res/web'
 
@@ -32,7 +34,7 @@ param siteConfigs object = {
         'default.aspx'
         'index.php'
       ]
-      netFrameworkVersion: 'v6.0'
+      netFrameworkVersion: 'v8.0'
       requestTracingEnabled: false
       remoteDebuggingEnabled: false
       httpLoggingEnabled: false
@@ -172,7 +174,7 @@ module functionApp 'modules/web/site/main.bicep'= {
       AzureWebJobsStorage: 'DefaultEndpointsProtocol=https;AccountName=${Storage.outputs.storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${Storage.outputs.storageAccountKey}'
       AzureFunctionsJobHost__logging__logLevel__default: 'Trace'
       EASYAUTH_SECRET: '<EASYAUTH_SECRET>'
-      FUNCTIONS_EXTENSION_VERSION: '~4'
+      FUNCTIONS_EXTENSION_VERSION: '~8'
       FUNCTIONS_WORKER_RUNTIME: 'dotnet'
       WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${Storage.outputs.storageAccountName};EndpointSuffix=${environment().suffixes.storage};AccountKey=${Storage.outputs.storageAccountKey}'
       WEBSITE_CONTENTSHARE: functionAppWebsiteContentShare
@@ -218,3 +220,6 @@ module logicApp 'modules/logicapp/main.bicep' = {
     tags: tags
   }
 }
+
+
+
