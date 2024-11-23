@@ -18,8 +18,8 @@ Remember to update following params in bicep file:
 6. Comment to incident with success & error array results
 
 
-![Logic App Outline](.\img\Incident-outline-1.png)
-![Logic App Outline](.\img\Incident-outline-2.png)
+![](.\img\Incident-outline-1.png)
+![](.\img\Incident-outline-2.png)
 
 ### Outline for entity trigger
 1. Logic app triggered from entity
@@ -27,7 +27,7 @@ Remember to update following params in bicep file:
 3. ???
 4. yeah it's done. (or atleast should be...)
 
-![Logic App Outline](.\img\Entity-outline.png)
+![](.\img\Entity-outline.png)
 
 
 ## Files
