@@ -1,24 +1,42 @@
 # Block-EntraIDUser WORK IN PROGRESS
-- Original source: https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID/Playbooks/Block-AADUser
-- Original author: Nicholas DiCola
-
-Modification by: Anssi Päivinen
 
 # Description
-Update user, accountEnabled property https://learn.microsoft.com/en-us/graph/api/user-update
+Just a simple Block entra id user from signin in playbook for Microsoft Sentinel.  
+This playbook utilizes Microsoft Graph via managed identity.
 
  A global administrator assigned the Directory.AccessAsUser.All delegated permission can update the accountEnabled status of all administrators in the tenant.
 
+res folder contains [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) for Azure resources. Rest of the files are by author.
+
+### Outline for entity trigger
+1. Logic app triggered from entity
+2. User is blocked by using [Update user](https://learn.microsoft.com/en-us/graph/api/user-update) endpoint property `accountEnabled`
+3. Check if incident ID is null. If yes terminate the logic app run
+4. If incident ID is present then get users manager by using [List Manager](https://learn.microsoft.com/en-us/graph/api/user-list-manager) endpoint
+5. Parse the results and respond to incident with comment
+
+![Logic App Outline](.\img\LogicAppOutline.png)
+
+### Outline for incident trigger
+1. Logic app triggered from incident
+2. Loop through users
+2. Users are blocked by using [Update user](https://learn.microsoft.com/en-us/graph/api/user-update) endpoint property `accountEnabled`
+4. Get managers for indivinidual users by using [List Manager](https://learn.microsoft.com/en-us/graph/api/user-list-manager) endpoint
+5. Parse the results and respond to incident with comment, one comment for each user
+
 ## ToDo
-1. Change all entra id connectors to graph api
-2. Create Graph powershell script to assign permissions for managed identity
 3. Create a bicep template 
-4. use unified email connector
 
 ## Files
-- Block-EntraIDUser.bicep
+- main.bicep
+- entity.bicepparam
+- incident.bicepparam
 
 # Prequisites
+- Azure Subscription with resource group for logic app
+- User.ManageIdentities.All permission (or global admin)
+- Powershell with [MicrosoftGraph Powershell SDK](https://learn.microsoft.com/en-us/powershell/microsoftgraph/installation?view=graph-powershell-1.0)
+
 
 # Post-deployment
 
@@ -45,14 +63,10 @@ $appRoleAssignment = @{
 New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $ObjectID -BodyParameter $appRoleAssignment | Format-List
 ```
 
-## Powershell for grating permissions for Managed identity
-
-```powershell
-# ~~ Insert script here ~~
-```
 
 # Changes
 |Date|Description|
 |--|--|
 |2023-12-21|Initial development|
 |2024-04-11|Created bicep files|
+|2024-04-15|Initial readme|
