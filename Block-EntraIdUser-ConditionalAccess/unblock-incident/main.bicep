@@ -1,10 +1,9 @@
-metadata name = 'Block Entra ID user with incident trigger'
-metadata description = 'This bicep deploys Sentinel playbook for blocking Entra ID user with incident trigger'
+metadata name = 'Unblock Entra ID user by using conditional access with incident trigger'
+metadata description = 'This Bicep template deploys a Sentinel playbook that unblocks Entra ID user access to all cloud resources using conditional access. The playbook is triggered from a incident.'
 metadata author = 'Anssi Päivinen'
-metadata Created = '23.11.2024'
+metadata Created = '24.11.2024'
 metadata Modified = '24.11.2024'
-metadata ChangeReason = 'Updated metadata and default param values'
-
+metadata ChangeReason = 'Initial bicep development'
 
 targetScope = 'resourceGroup'
 
@@ -13,6 +12,9 @@ param servicePrefix string = ''
 
 @description('Specifies who created the resource. This is used in Tags')
 param createdBy string = 'Anonymous'
+
+@description('Define a group id for Microsoft Entra ID group which is used in Conditional Access policy to block users')
+param groupId string = 'INSERT-YOUR-GROUPID-HERE'
 
 @description('Define a name for resource group. By default uses the current resource group name')
 param resourceGroup string = az.resourceGroup().name
@@ -23,8 +25,8 @@ param location string = az.resourceGroup().location
 @description('The deployment timestamp')
 param deploymentTimestamp string = utcNow() // Example: 20241123T210053Z
 
-var LogicAppname = empty(servicePrefix) ? 'Block-EntraIDUser-Incident' : '${servicePrefix}-Block-EntraIDUser-Incident'
-var sentinelConnectorName = '${LogicAppname}'
+var LogicAppname = empty(servicePrefix) ? 'Unblock-User-ConditionalAccess-Incident' : '${servicePrefix}-Unlock-User-ConditionalAccess-Incident'
+
 var year = substring(deploymentTimestamp, 0, 4)          // Extracts '2024'
 var month = substring(deploymentTimestamp, 4, 2)         // Extracts '11'
 var day = substring(deploymentTimestamp, 6, 2)           // Extracts '23'
@@ -33,7 +35,7 @@ var formattedDate = '${day}.${month}.${year}'            // '23.11.2024'
 
 
 resource sentinelConnector 'Microsoft.Web/connections@2016-06-01' = {
-  name: sentinelConnectorName
+  name: LogicAppname
   location: location
   tags: {
     Playbook: LogicAppname
@@ -42,7 +44,7 @@ resource sentinelConnector 'Microsoft.Web/connections@2016-06-01' = {
   }
   kind: 'V1'
   properties: {
-    displayName: sentinelConnectorName
+    displayName: LogicAppname
     statuses: [
       {
         status: 'Ready'
@@ -120,39 +122,7 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
             path: '/entities/account'
           }
         }
-        'Initialize_variable_-_ErrorArray': {
-          runAfter: {
-            'Entities_-_Get_Accounts': [
-              'Succeeded'
-            ]
-          }
-          type: 'InitializeVariable'
-          inputs: {
-            variables: [
-              {
-                name: 'ErrorArray'
-                type: 'array'
-              }
-            ]
-          }
-        }
-        'Initialize_variable_-_SuccessArray': {
-          runAfter: {
-            'Initialize_variable_-_ErrorArray': [
-              'Succeeded'
-            ]
-          }
-          type: 'InitializeVariable'
-          inputs: {
-            variables: [
-              {
-                name: 'SuccessArray'
-                type: 'array'
-              }
-            ]
-          }
-        }
-        'Compose_-_DEBUG_-_list_of_accounts': {
+        'Compose_-_DEBUG_-_List_of_accounts': {
           runAfter: {
             'Initialize_variable_-_SuccessArray': [
               'Succeeded'
@@ -164,13 +134,13 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
         For_each: {
           foreach: '@body(\'Entities_-_Get_Accounts\')?[\'Accounts\']'
           actions: {
-            'HTTP_-_Block_user': {
+            'HTTP_-_Remove_user_from_group': {
               type: 'Http'
               inputs: {
-                uri: 'https://graph.microsoft.com/v1.0/users/@{items(\'For_each\')?[\'AadUserId\']}'
-                method: 'PATCH'
-                body: {
-                  accountEnabled: '@false'
+                uri: 'https://graph.microsoft.com/v1.0/groups/@{variables(\'GroupId\')}/members/@{item()?[\'AadUserId\']}/$ref'
+                method: 'DELETE'
+                headers: {
+                  'Content-type': ' application/json'
                 }
                 authentication: {
                   type: 'ManagedServiceIdentity'
@@ -185,17 +155,17 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
             }
             'Append_to_array_variable_-_SuccessArray': {
               runAfter: {
-                'HTTP_-_Block_user': [
+                'HTTP_-_Remove_user_from_group': [
                   'Succeeded'
                 ]
               }
               type: 'AppendToArrayVariable'
               inputs: {
                 name: 'SuccessArray'
-                value: 'User <b>@{item()?[\'Name\']}</b> was successfully disabled.<br />'
+                value: 'User <b>@{item()?[\'Name\']}</b> was successfully removed from Block user group.<br />'
               }
             }
-            'Append_to_array_variable_-_ErrorArray': {
+            'Append_to_array_variable_-_Errorarray': {
               runAfter: {
                 'Parse_JSON_-_Error_message': [
                   'Succeeded'
@@ -204,18 +174,18 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
               type: 'AppendToArrayVariable'
               inputs: {
                 name: 'ErrorArray'
-                value: 'User <b>@{item()?[\'Name\']}</b> was <b><em>not disabled</em></b>. <br /><b>Error message:</b> @{body(\'Parse_JSON_-_Error_message\')?[\'error\']?[\'message\']}<br />'
+                value: 'User <b>@{item()?[\'Name\']}</b> was <b><em>not removed</em></b> from block users group. <br /><b>Error message:</b> @{body(\'Parse_JSON_-_Error_message\')?[\'error\']?[\'message\']}<br />'
               }
             }
             'Parse_JSON_-_Error_message': {
               runAfter: {
-                'HTTP_-_Block_user': [
+                'HTTP_-_Remove_user_from_group': [
                   'Failed'
                 ]
               }
               type: 'ParseJson'
               inputs: {
-                content: '@body(\'HTTP_-_Block_user\')'
+                content: '@body(\'HTTP_-_Remove_user_from_group\')'
                 schema: {
                   type: 'object'
                   properties: {
@@ -250,16 +220,66 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
             }
           }
           runAfter: {
-            'Compose_-_DEBUG_-_list_of_accounts': [
+            'Compose_-_DEBUG_-_List_of_accounts': [
               'Succeeded'
             ]
           }
           type: 'Foreach'
         }
+        'Initialize_variable_-_GroupId': {
+          runAfter: {
+            'Entities_-_Get_Accounts': [
+              'Succeeded'
+            ]
+          }
+          type: 'InitializeVariable'
+          inputs: {
+            variables: [
+              {
+                name: 'GroupId'
+                type: 'string'
+                value: groupId
+              }
+            ]
+          }
+        }
+        'Initialize_variable_-_ErrorArray': {
+          runAfter: {
+            'Initialize_variable_-_GroupId': [
+              'Succeeded'
+            ]
+          }
+          type: 'InitializeVariable'
+          inputs: {
+            variables: [
+              {
+                name: 'ErrorArray'
+                type: 'array'
+              }
+            ]
+          }
+        }
+        'Initialize_variable_-_SuccessArray': {
+          runAfter: {
+            'Initialize_variable_-_ErrorArray': [
+              'Succeeded'
+            ]
+          }
+          type: 'InitializeVariable'
+          inputs: {
+            variables: [
+              {
+                name: 'SuccessArray'
+                type: 'array'
+              }
+            ]
+          }
+        }
         'Add_comment_to_incident_(V3)': {
           runAfter: {
             For_each: [
               'Succeeded'
+              'Failed'
             ]
           }
           type: 'ApiConnection'
@@ -272,7 +292,7 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
             method: 'post'
             body: {
               incidentArmId: '@triggerBody()?[\'object\']?[\'id\']'
-              message: '@{if(empty(variables(\'SuccessArray\')),\'\',join(variables(\'SuccessArray\'),\',\'))}<br><br>@{if(empty(variables(\'ErrorArray\')),\'\',join(variables(\'ErrorArray\'),\',\'))}'
+              message: '<p class="editor-paragraph">@{if(empty(variables(\'SuccessArray\')),\'\',join(variables(\'SuccessArray\'),\',\'))}<br><br>@{if(empty(variables(\'ErrorArray\')),\'\',join(variables(\'ErrorArray\'),\',\'))}</p>'
             }
             path: '/Incidents/Comment'
           }
@@ -285,7 +305,7 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
         value: {
           azuresentinel: {
             id: '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Web/locations/${location}/managedApis/azuresentinel'
-            connectionId: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/connections/${sentinelConnectorName}'
+            connectionId: '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/connections/${LogicAppname}'
             connectionName: LogicAppname
             connectionProperties: {
               authentication: {
