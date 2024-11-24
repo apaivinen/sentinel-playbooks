@@ -2,6 +2,8 @@ metadata name = 'Unblock Entra ID user by using conditional access with entity t
 metadata description = 'This Bicep template deploys a Sentinel playbook that unblocks Entra ID user access to all cloud resources using conditional access. The playbook is triggered from an entity.'
 metadata author = 'Anssi Päivinen'
 metadata Created = '24.11.2024'
+metadata Modified = '24.11.2024'
+metadata ChangeReason = 'Initial bicep development'
 
 targetScope = 'resourceGroup'
 

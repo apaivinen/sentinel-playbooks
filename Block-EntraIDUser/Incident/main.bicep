@@ -2,6 +2,9 @@ metadata name = 'Block Entra ID user with incident trigger'
 metadata description = 'This bicep deploys Sentinel playbook for blocking Entra ID user with incident trigger'
 metadata author = 'Anssi Päivinen'
 metadata Created = '23.11.2024'
+metadata Modified = '24.11.2024'
+metadata ChangeReason = 'Updated metadata and default param values'
+
 
 targetScope = 'resourceGroup'
 

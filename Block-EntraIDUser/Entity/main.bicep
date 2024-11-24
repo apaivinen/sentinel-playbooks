@@ -1,9 +1,9 @@
-metadata name = 'Block Entra ID user by using conditional access with entity trigger'
-metadata description = 'This Bicep template deploys a Sentinel playbook that blocks Entra ID user access to all cloud resources using conditional access. The playbook is triggered from an entity.'
+metadata name = 'Block Entra ID user with entity trigger'
+metadata description = 'This bicep deploys Sentinel playbook for blocking Entra ID user with entity trigger'
 metadata author = 'Anssi Päivinen'
-metadata Created = '24.11.2024'
+metadata Created = '23.11.2024'
 metadata Modified = '24.11.2024'
-metadata ChangeReason = 'Initial bicep development'
+metadata ChangeReason = 'Updated metadata'
 
 targetScope = 'resourceGroup'
 
@@ -12,9 +12,6 @@ param servicePrefix string = ''
 
 @description('Specifies who created the resource. This is used in Tags')
 param createdBy string = 'Anonymous'
-
-@description('Define a group id for Microsoft Entra ID group which is used in Conditional Access policy to block users')
-param groupId string = 'INSERT-YOUR-GROUPID-HERE'
 
 @description('Define a name for resource group. By default uses the current resource group name')
 param resourceGroup string = az.resourceGroup().name
@@ -25,7 +22,7 @@ param location string = az.resourceGroup().location
 @description('The deployment timestamp')
 param deploymentTimestamp string = utcNow() // Example: 20241123T210053Z
 
-var LogicAppname = empty(servicePrefix) ? 'Block-User-ConditionalAccess-Entity' : '${servicePrefix}-Block-User-ConditionalAccess-Entity'
+var LogicAppname = empty(servicePrefix) ? 'Block-EntraIDUser-Entity' : '${servicePrefix}-Block-EntraIDUser-Entity'
 
 var year = substring(deploymentTimestamp, 0, 4)          // Extracts '2024'
 var month = substring(deploymentTimestamp, 4, 2)         // Extracts '11'
@@ -101,28 +98,21 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
               }
             }
             body: {
-              callback_url: '@listCallbackUrl()'
+              callback_url: '@{listCallbackUrl()}'
             }
             path: '/entity/@{encodeURIComponent(\'Account\')}'
           }
         }
       }
       actions: {
-        'HTTP_-_Add_user_to_group': {
-          runAfter: {
-            'Initialize_variable_-_GroupId': [
-              'Succeeded'
-            ]
-          }
+        'HTTP_-_Block_user': {
+          runAfter: {}
           type: 'Http'
           inputs: {
-            uri: 'https://graph.microsoft.com/v1.0/groups/@{variables(\'GroupId\')}/members/$ref'
-            method: 'POST'
-            headers: {
-              'Content-type': ' application/json'
-            }
+            uri: 'https://graph.microsoft.com/v1.0/users/@{triggerBody()?[\'Entity\']?[\'properties\']?[\'AadUserId\']}'
+            method: 'PATCH'
             body: {
-              '@@odata.id': 'https://graph.microsoft.com/v1.0/directoryObjects/@{triggerBody()?[\'Entity\']?[\'properties\']?[\'AadUserId\']}'
+              accountEnabled: '@false'
             }
             authentication: {
               type: 'ManagedServiceIdentity'
@@ -135,21 +125,7 @@ resource LogicApp 'Microsoft.Logic/workflows@2017-07-01' = {
             }
           }
         }
-        'Initialize_variable_-_GroupId': {
-          runAfter: {}
-          type: 'InitializeVariable'
-          inputs: {
-            variables: [
-              {
-                name: 'GroupId'
-                type: 'string'
-                value: groupId
-              }
-            ]
-          }
-        }
       }
-      outputs: {}
     }
     parameters: {
       '$connections': {
