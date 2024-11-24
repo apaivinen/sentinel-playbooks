@@ -6,5 +6,5 @@ My playbooks are either for my own learning purposes or showcases.
 
 # Playbooks
 - Block-EntraIDUser
-- Reset-EntraIDUserPassword
+- Block-EntraIdUser-ConditionalAccess
 - Revoke-EntraIDSignInSessions

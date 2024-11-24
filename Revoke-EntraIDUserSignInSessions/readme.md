@@ -1,7 +1,7 @@
 # Revoke-EntraIDUserSignInSessions
 
 This is just a simple revoke user sign in sessions playbook for incident and entity triggers.  
-More detailed description can be found [here](https://www.apaivinen.fi/posts/Revoke-User-Sign-In-Sessions-by-Logic-App-Sentinel-Playbook/)
+More detailed description can be found [here](https://www.anssipaivinen.fi/posts/Revoke-User-Sign-In-Sessions-by-Logic-App-Sentinel-Playbook/)
 
 # Description
 
@@ -30,31 +30,50 @@ Both of the playbook templates creates following Azure resources:
 
 ![](./images/Entity-trigger-revoke-sessions.png)
 
-## ToDo
-1. Create Graph powershell script to assign permissions for managed identity
-2. Create a bicep template 
-
 # Prequisites
 1. Sentinel workspace
-2. [AzureAD Powershell module](https://learn.microsoft.com/en-us/powershell/azure/active-directory/install-adv2?view=azureadps-2.0)
+3. Resource group for playbooks
+2. [MgGraph powershell module](https://learn.microsoft.com/en-us/powershell/microsoftgraph/get-started?view=graph-powershell-1.0)
+
+Deploy bicep files depending on which trigger you want to check out
+- incident.bicep
+- entity.bicep
+
+Deployment commmands
+```powershell
+az deployment group create --name "Revoke-Session-INC-1" --resource-group "YOU-RG-HERE" --template-file incident.bicep
+az deployment group create --name "Revoke-Session-ENT-1" --resource-group "YOU-RG-HERE" --template-file incident.bicep
+```
 
 # Post-deployment
 1. Assign Sentinel Responder role to Managed identity created by Logic App.
+    - Required for both logic apps
 2. Assign `User.ReadWrite.All` Graph API permission to managed Identity
 
 ## Powershell for grating permissions for Managed identity
 
 ```powershell
-$MIGuid = "<Enter your managed identity guid here>"
-$MI = Get-AzureADServicePrincipal -ObjectId $MIGuid
 
-$GraphAppId = "00000003-0000-0000-c000-000000000000"
-$PermissionName = "User.ReadWrite.All" 
+# Add the correct 'Object (principal) ID' for the Managed Identity
+$ObjectId = "OBJECTID"
 
-$GraphServicePrincipal = Get-AzureADServicePrincipal -Filter "appId eq '$GraphAppId'"
-$AppRole = $GraphServicePrincipal.AppRoles | Where-Object {$_.Value -eq $PermissionName -and $_.AllowedMemberTypes -contains "Application"}
-New-AzureAdServiceAppRoleAssignment -ObjectId $MI.ObjectId -PrincipalId $MI.ObjectId `
--ResourceId $GraphServicePrincipal.ObjectId -Id $AppRole.Id
+# Add the correct Graph scope to grant
+$graphScope = "User.ReadWrite.All"
+
+Connect-MgGraph -Scope AppRoleAssignment.ReadWrite.All
+$graph = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+
+$graphAppRole = $graph.AppRoles | ? Value -eq $graphScope
+
+$appRoleAssignment = @{
+    "principalId" = $ObjectId
+    "resourceId"  = $graph.Id
+    "appRoleId"   = $graphAppRole.Id
+}
+
+New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $ObjectID -BodyParameter $appRoleAssignment | Format-List
+
+
 ```
 
 # Changes
