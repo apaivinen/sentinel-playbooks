@@ -51,7 +51,7 @@ Remember to update following params in main.bicep files:
 2. Create conditional access policy
     - Users
         - Include group you just created
-        - Exclude MFA or any other emergency accounts
+        - Exclude Break glass or any other emergency accounts
     - Target all resources
     - Grant BLOCK
 
